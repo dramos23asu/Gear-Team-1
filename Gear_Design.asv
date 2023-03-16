@@ -1,0 +1,130 @@
+clc; clear ; close all
+
+%% Gear Geometry
+gr = 2; % Gear Ratio
+
+T_in = 470; % ft-lb
+w_in = 5200; % RPM
+w_out = 2*w_in; % RPM
+
+p_angle = 20; % degrees
+p_angle_rad = 20*(pi/180); 
+k = 1; % eq 13-10
+
+N_min_exact = (2*k)/((1+2*gr)*(sin(p_angle_rad))^2)*(gr+sqrt(gr^2+(1+2*gr)*(sin(p_angle_rad))^2)); % eq 13-11
+
+N_min = round(N_min_exact); % Rounding
+
+N2 = N_min; % Assuming both gears are the same
+N4 = N_min;
+
+N3_exact = sqrt(gr)*N2; % Assuming both gears are the same
+N3 = round(N3_exact); % rounding to nearest ingteger
+N5 = N3;
+
+w2 = w_in;
+w3 = (N2/N3)*w_in;
+w4 = w3;
+w5 = w_out;
+
+%% Safety Factors
+
+surface_n = 1.2; 
+bending_n = 1.5;
+
+max_gearbox_height = 10; % in
+clearance = 1; % in
+case_thickness = 1; % in
+addendum_height = 0.5; % in
+
+P_min_exact = (N3+(N2/2)+(N5/2)+addendum_height)/(max_gearbox_height-(clearance+case_thickness)); % eq 18-3 , (teeth/in)
+
+P_min = round(P_min_exact);
+
+d2 = N2/P_min;
+d4 = d2;
+d3 = N3/P_min;
+d5 = d3;
+
+% Pitch-Line Velocities
+
+V23 = (pi*d2*w2)/12; % ft/min
+V45 = (pi*d5*w5)/12; % ft/min
+
+% Transmitted Loads
+
+H = T_in*w2/5252;  % --------------------------------------->> FIX THIS (UNITS PG 930)
+
+W23 = 33000*(H/V23);
+W45 = 33000*(H/V45);
+
+%% Gear 4 Wear
+I = ((cos(p_angle_rad)*sin(p_angle_rad))/2)*(gr/(gr-1));
+
+quality_num = 7; 
+B = 0.25*(12-7)^(2/3);
+A = 50+56*(1-B);
+kv = ((A+sqrt(V45))/A)^(B);
+% Face Width 
+F = round(4*(pi/P_min),1);
+
+%Load distribution factor 
+Cpf = (F/(10*d2))-0.0375 + 0.0125*F;
+Cmc = 1;
+Cpm = 1;
+
+% from table 14-9, commercial enclosed units
+Cma = 0.127 + 0.0158*F + (-0.930*10^-4)*(F^2);
+Ce = 1;
+
+Km = 1 + Cmc*(Cpf*Cpm+Cma*Ce); %calculation of load distribution factor
+
+% Elastic Coefficient 
+Cp = 2300;
+
+% AGMA Stress 
+
+sigma_c = Cp*sqrt((W45*kv*Km)/(d2*F*I));
+
+% Life Factor
+
+operation_time = 10; % years
+
+L4 = (operation_time*8766)*60*w4; % Tota revolutions
+
+Zn = 0.7;
+Kr = 1;
+Kt = 1;
+Ch = 1;
+
+Sc = (surface_n*sigma_c)/Zn;
+
+minimum_strength_4 = Sc;
+
+%% Gear 4 Bending
+
+J_4 = 0.24;
+KB_4 = 1;
+
+sigma_b_4 = (W45*kv*P_min*Km)/(F*J_4); % psi
+
+Yn_4 = 0.85;
+
+%% Gear 5 Bending and Wear
+
+J_5 = 0.31; % changes with gear teeth
+
+L_5 = (operation_time*8766)*60*w5;
+
+Yn_5 = 0.83;
+
+Zn_5 = 0.75;
+
+sigma_c_5 = 2300*sqrt(W45*kv*)
+
+
+
+
+
+
+
